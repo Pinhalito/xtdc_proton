@@ -1,0 +1,351 @@
+#!/bin/bash
+
+#######################
+#    ^...^  `^...^´   #
+#   / o,o \ / O,O \   #
+#   |):::(| |):::(|   #
+# ====" "=====" "==== #
+#         TdC         #
+#      1998-2019      #
+#######################
+
+salvar_vars(){
+#SALVA AS VARIÁVEIS A SEREM USADAS PELO SCRIPT
+echo "$(date +%Y-%m-%d_%H%M%S)" Começando >> xtdc18_log.txt
+echo USUARIO="$USER" >> xtdc18_vars.txt
+echo DIR="$HOME" >> xtdc18_vars.txt
+echo BASE="$PWD" >> xtdc18_vars.txt
+source xtdc18_vars.txt
+echo -e "$(date +%Y-%m-%d_%H%M%S)" "${FUNCNAME[0]}" >> xtdc18_log.txt
+}
+
+insta_ppa(){
+#INSTALA PPA
+
+#LISTA DE PPAS
+xtdc_ppas=(
+rvm/smplayer
+nilarimogard/webupd8
+jtaylor/keepass
+maarten-baert/simplescreenrecorder
+)
+for ppas in "${xtdc_ppas[@]}"
+do
+sudo add-apt-repository -y ppa:"$ppas"
+done
+
+#LIMPA SOURCES.LIST
+sudo sed -i.bkp -e '/^\s*#.*$/d' -e '/^\s*$/d' /etc/apt/sources.list
+sudo sort /etc/apt/sources.list | uniq -u
+sudo apt-get update
+}
+
+adriver(){
+#DRIVERS ADICIONAIS
+sudo ubuntu-drivers list
+sudo ubuntu-drivers autoinstall 
+sudo ubuntu-drivers devices
+echo -e "$(date +%Y-%m-%d_%H%M%S)" "${FUNCNAME[0]}" >> xtdc18_log.txt
+
+
+#dpkg -s bcmwl-kernel-source &> /dev/null
+#if [ $? -eq 0 ]; then
+#echo "bcmwl-kernel-source JÁ INSTALADO"
+#else
+#fi
+}
+
+insta_pkg(){
+sudo apt-get update
+sudo apt-get install -y curl
+curl https://rclone.org/install.sh | sudo bash
+#PROGRAMAS
+SISTEMA="xfswitch-plugin xfpanel-switch menulibre file-roller numlockx synaptic dconf-tools catfish thunar-archive-plugin p7zip-full unrar"
+FERRAMENTAS="bleachbit gparted geany keepassx speedcrunch baobab gnome-system-tools gnome-system-monitor"
+MULTIMIDIA="audacity smplayer simplescreenrecorder"
+INTERNET="google-chrome-stable transmission rclone-browser"
+GRAFICOS="pinta eog evince shotwell"
+IDIOMA="language-pack-pt language-pack-pt-base language-pack-gnome-pt language-pack-gnome-pt-base"
+OUTROS=""
+
+#for pkg in $SISTEMA $FERRAMENTAS $MULTIMIDIA $INTERNET $GRAFICOS $IDIOMA $OUTROS; do
+#sudo apt install -y "$pkg" --no-install-recommends
+#echo -e "$(date +%Y-%m-%d_%H%M%S)" "$pkg instalado" >> xtdc18_log.txt
+#done
+
+for pkg in $SISTEMA $FERRAMENTAS $MULTIMIDIA $INTERNET $GRAFICOS $IDIOMA $OUTROS; do
+dpkg -s $pkg &> /dev/null
+if [ $? -eq 0 ]; then
+echo "$pkg já está instalado!"
+else
+sudo apt install -y "$pkg" --no-install-recommends
+echo -e "$(date +%Y-%m-%d_%H%M%S)" "$pkg instalado" >> xtdc18_log.txt
+fi
+done
+echo -e "$(date +%Y-%m-%d_%H%M%S)" "${FUNCNAME[0]}" >> xtdc18_log.txt
+}
+
+segunda(){
+#COLOCA SEGUNDA COMO PRIMEIRO DIA DA SEMANA
+sudo sed '/^END LC_TIME.*/i first_weekday 2' -i /usr/share/i18n/locales/pt_BR
+sudo locale-gen && xfce4-panel -r
+echo -e "$(date +%Y-%m-%d_%H%M%S)" "${FUNCNAME[0]}" >> xtdc18_log.txt
+}
+
+muta_mic(){
+#MUTA MICROFONE
+amixer set Capture nocap
+echo -e "$(date +%Y-%m-%d_%H%M%S)" "${FUNCNAME[0]}" >> xtdc18_log.txt
+}
+
+insta_ttf(){
+#FONTES TTF
+sudo chmod 777 -R /usr/share/fonts/truetype
+sudo tar xf "$BASE"/xtdc_ttf.tar.gz -C /usr/share/fonts/truetype
+echo -e "$(date +%Y-%m-%d_%H%M%S)" "${FUNCNAME[0]}" >> xtdc18_log.txt
+}
+
+insta_painel(){
+#PAINEL
+xfpanel-switch load "$BASE"/xtdc18_painel.tar.bz2
+xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-show -s false
+xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/workspace0/image-style -s 0
+echo -e "$(date +%Y-%m-%d_%H%M%S)" "${FUNCNAME[0]}" >> xtdc18_log.txt
+}
+
+insta_icones(){
+#ÍCONES
+sudo tar xf "$BASE"/xtdc.tar.gz -C /usr/share/icons
+sudo tar xf "$BASE"/xtdcwin.tar.gz -C /usr/share/icons
+sudo chmod 777 -R /usr/share/icons
+sudo cp -r "$BASE"/xubuntu-logo.png /usr/share/pixmaps/xubuntu-logo.png
+sudo cp -r "$BASE"/xubuntu-logo-menu.png /usr/share/pixmaps/xubuntu-logo-menu.png
+sudo cp -r "$BASE"/xubuntu-logo.svg /usr/share/pixmaps/xubuntu-logo.svg
+echo -e "$(date +%Y-%m-%d_%H%M%S)" "${FUNCNAME[0]}" >> xtdc18_log.txt
+}
+
+insta_tema(){
+#TEMAS
+sudo tar xf "$BASE"/xtdc_theme.tar.gz -C /usr/share/themes
+sudo chmod 777 -R /usr/share/themes
+
+xfconf-query -c xsettings -p /Net/IconThemeName -s xtdc
+xfconf-query -c xfwm4 -p /general/theme -s xtdc
+sudo cp -r "$BASE"/whiskermenu-1.rc "$DIR"/.config/xfce4/panel/whiskermenu-1.rc
+sudo cp -r "$BASE"/xfce-applications.menu "$DIR"/.config/menus/xfce-applications.menu
+xfce4-panel -r
+echo -e "$(date +%Y-%m-%d_%H%M%S)" "${FUNCNAME[0]}" >> xtdc18_log.txt
+}
+
+fundo_preto(){
+#FUNDO PRETO NO LOGIN
+sudo rm -rf /usr/share/backgrounds/xfce/*
+sudo rm -rf /usr/share/xfce4/backdrops/*
+
+sudo chmod 777 /usr/share/lightdm/lightdm-gtk-greeter.conf.d/01_ubuntu.conf
+sudo cat <<EOF | tee /usr/share/lightdm/lightdm-gtk-greeter.conf.d/01_ubuntu.conf
+[greeter]
+background=#000000
+theme-name=Ambiance
+icon-theme-name=LoginIcons
+font-name=Ubuntu 11
+xft-antialias=true
+xft-dpi=96
+xft-hintstyle=slight
+xft-rgba=rgb
+indicators=~host;~spacer;~session;~language;~a11y;~clock;~power;
+clock-format=%d %b, %H:%M
+EOF
+
+sudo chmod 777 /usr/share/lightdm/lightdm-gtk-greeter.conf.d/30_xubuntu.conf
+sudo cat <<EOF | tee /usr/share/lightdm/lightdm-gtk-greeter.conf.d/30_xubuntu.conf
+[greeter]
+background=#000000
+theme-name=Greybird
+icon-theme-name=elementary-xfce-dark
+font-name=Noto Sans 9
+keyboard=onboard
+screensaver-timeout=60
+EOF
+
+echo -e "$(date +%Y-%m-%d_%H%M%S)" "${FUNCNAME[0]}" >> xtdc18_log.txt
+}
+
+thunar_act(){
+#THUNAR ACTIONS
+DIR=$HOME
+sudo sed -i '/\<\/actions\>/d' "$DIR"/.config/Thunar/uca.xml
+sudo cat <<EOF | tee "$DIR"/.config/Thunar/uca.xml
+<?xml encoding="UTF-8" version="1.0"?>
+<actions>
+<action>
+<icon>Terminal</icon>
+<name>Abrir Terminal Aqui</name>
+<unique-id>1529930402473936-1</unique-id>
+<command>exo-open --working-directory %f --launch TerminalEmulator</command>
+<description>Exemplo de uma ação personalizada</description>
+<patterns>*</patterns>
+<directories/>
+</action>
+<action>
+<icon>filefind</icon>
+<name>Pesquisar nesta pasta</name>
+<unique-id>1529930402474102-3</unique-id>
+<command>catfish --path=%f</command>
+<description>Pesquisar por arquivos dentro desta pasta</description>
+<patterns>*</patterns>
+<directories/>
+</action>
+<action>
+<icon>document-print</icon>
+<name>Print file/s</name>
+<unique-id>1529930402474124-4</unique-id>
+<command>thunar-print %F</command>
+<description>Send one or multiple files to the default printer</description>
+<patterns>*.asc,*.brf,*.css,*.doc,*.docm,*.docx,*.dotm,*.dotx,*.fodg,*.fodp,*.fods,*.fodt,*.gif,*.htm,*.html,*.jpe,*.jpeg,*.jpg,*.odb,*.odf,*.odg,*.odm,*.odp,*.ods,*.odt,*.otg,*.oth,*.otp,*.ots,*.ott,*.pbm,*.pdf,*.pgm,*.png,*.pnm,*.pot,*.potm,*.potx,*.ppm,*.ppt,*.pptm,*.pptx,*.rtf,*.shtml,*.srt,*.text,*.tif,*.tiff,*.txt,*.xbm,*.xls,*.xlsb,*.xlsm,*.xlsx,*.xltm,*.xltx,*.xpm,*.xwd</patterns>
+<directories/>
+</action>
+<action>
+<icon>file-manager</icon>
+<name>ROOT Thunar</name>
+<unique-id>1557971580401141-2</unique-id>
+<command>pkexec thunar</command>
+<description></description>
+<patterns>*</patterns>
+<directories/>
+</action>
+</actions>
+EOF
+echo -e "$(date +%Y-%m-%d_%H%M%S)" "${FUNCNAME[0]}" >> xtdc18_log.txt
+}
+
+sub_atalhos(){
+#SUBSTITUI OS ATALHOS
+destino=/usr/share/applications
+origem="$BASE"/applications
+cd /usr/share/applications
+for apps in $(ls);do
+if [ -f "$origem"/"$apps" ]; then
+sudo cp -r "$origem"/"$apps" "$destino"/"$apps"
+fi
+done
+echo -e "$(date +%Y-%m-%d_%H%M%S)" "${FUNCNAME[0]}" >> xtdc18_log.txt
+}
+
+insta_chrome(){
+#INSTALA PPA E CHROME COM AS EXTENSÕES
+wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+sudo apt-get update
+sudo apt-get install -y google-chrome-stable --no-install-recommends
+
+#ATALHOS DO CHROME
+sudo cat <<EOF | sudo tee /usr/share/applications/google-chrome.desktop
+[Desktop Entry]
+Version=1.0
+Name=Google Chrome
+GenericName=Web Browser
+GenericName[pt_BR]=Navegador da Internet
+# Gnome and KDE 3 uses Comment.
+Comment=Access the Internet
+Comment[pt_BR]=Acessar a internet
+Exec=/usr/bin/google-chrome-stable %U
+StartupNotify=true
+Terminal=false
+Icon=google-chrome
+Type=Application
+Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml_xml;image/webp;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/ftp;
+Actions=new-window;new-private-window;
+
+[Desktop Action new-window]
+Name=New Window
+Name[pt_BR]=Nova janela
+Exec=/usr/bin/google-chrome-stable
+
+[Desktop Action new-private-window]
+Name=New Incognito Window
+Name[pt_BR]=Nova janela anônima
+Exec=/usr/bin/google-chrome-stable --incognito
+EOF
+
+sudo cat <<EOF | sudo tee /usr/share/applications/google-chrome-incognito.desktop
+[Desktop Entry]
+Version=1.0
+Name=Google Chrome ANÔNIMO
+# Only KDE 4 seems to use GenericName, so we reuse the KDE strings.
+# From Ubuntu's language-pack-kde-XX-base packages, version 9.04-20090413.
+GenericName=Navegador ANÔNIMO
+Comment=Navegar na internet sem deixar rastros
+Exec=/usr/bin/google-chrome-stable --incognito
+Terminal=false
+Icon=/usr/share/icons/xtdc/apps/google-chrome-incognito.svg
+Type=Application
+Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml_xml;image/webp;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/ftp;
+Actions=new-window;new-private-window;
+Path=
+StartupNotify=false
+EOF
+
+exts=(
+inst_chrome_ext emngkmlligggbbiioginlkphcmffbncb #AdBlock no YouTube™
+inst_chrome_ext cfhdojbkjhnklbpkdaibdccddilifddb #Adblock Plus - bloqueador de anúncios grátis
+inst_chrome_ext fngmhnnpilhplaeedifhccceomclgfbg #EditThisCookie
+inst_chrome_ext abjcfabbhafbcdfjoecdgepllmpfceif #Magic Actions for YouTube™
+inst_chrome_ext cmedhionkhpnakcndndgjdbohmhepckk #Os anúncios bloqueados para Youtube™
+inst_chrome_ext jfchnphgogjhineanplmfkofljiagjfb #Downloads
+inst_chrome_ext aapbdbdomjkkjkaonfhkkikfgjllcleb #Google Tradutor
+)
+for ext in "${exts[@]}"
+do
+preferences_dir_path="/opt/google/chrome/extensions"
+pref_file_path="$preferences_dir_path/$ext.json"
+upd_url="https://clients2.google.com/service/update2/crx"
+sudo mkdir -p "$preferences_dir_path"
+sudo chmod 777 -R "$preferences_dir_path"
+echo "{" > "$pref_file_path"
+echo "  \"external_update_url\": \"$upd_url\"" >> "$pref_file_path"
+echo "}" >> "$pref_file_path"
+echo Added \""$pref_file_path"\" ["$ext"]
+done
+echo -e "$(date +%Y-%m-%d_%H%M%S)" "${FUNCNAME[0]}" >> xtdc18_log.txt
+}
+
+senha_min(){
+sudo chmod 777 /etc/pam.d/common-password
+sudo cp -r "$BASE"/common-password /etc/pam.d/common-password
+echo -e "$(date +%Y-%m-%d_%H%M%S)" "${FUNCNAME[0]}" >> xtdc18_log.txt
+}
+
+lista_func(){
+#
+IFS=$'\n'
+for f in $(declare -F); do
+echo "${f:11}"
+done
+
+#
+echo "functions available:"
+typeset -f | awk '/ \(\) $/ && !/^main / {print $1}'
+
+}
+
+rodar(){
+salva_var
+insta_pkg
+segunda
+muta_mic
+insta_ttf
+insta_painel
+insta_icones
+insta_tema
+fundo_preto
+thunar_act
+sub_atalhos
+insta_chrome
+senha_min
+}
+
+#LIMPAR
+#sudo apt remove fonts-lao fonts-lklug-sinhala fonts-sil-abyssinica fonts-sil-padauk fonts-tibetan-machine fonts-thai-tlwg
